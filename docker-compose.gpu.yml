@@ -4,7 +4,7 @@ services:
   stable-diffusion-api:
     build:
       context: .
-      dockerfile: Dockerfile.gpu
+      dockerfile: Dockerfile.gpu.pytorch
     ports:
       - "8080:8000"
     environment:

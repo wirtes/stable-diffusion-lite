@@ -244,15 +244,18 @@ docker run --gpus all -p 8080:8000 stable-diffusion-api-gpu
 
 **Manual image troubleshooting:**
 ```bash
-# Check available CUDA images
-docker search nvidia/cuda
+# Test which CUDA images are available
+chmod +x test-cuda-images.sh
+./test-cuda-images.sh
 
-# Try pulling manually
-docker pull nvidia/cuda:11.7-devel-ubuntu20.04
+# Force clean rebuild (clears Docker cache)
+docker compose -f docker-compose.gpu.yml build --no-cache
 
-# Alternative: use PyTorch base image (more reliable)
+# Manual image testing
 docker pull pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
 ```
+
+**For Debian users:** The PyTorch-based image is recommended as it's more universally available.
 
 **GPU Not Detected:**
 - Install NVIDIA Container Toolkit: [Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
