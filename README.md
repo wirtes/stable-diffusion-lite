@@ -1,89 +1,145 @@
 # Dockerized Stable Diffusion API
 
-A lightweight, CPU-optimized Stable Diffusion API designed for systems with low resources and no GPU.
+A flexible Stable Diffusion API with both CPU and GPU support, designed to work efficiently on any sy
 
 ## Features
 
-- CPU-only inference optimized for low resource usage
-- RESTful API with simple JSON interface
-- Docker containerized for easy deployment
-- Memory and CPU usage limits
-- Health check endpoint
-- Base64 image output
+- **Dual deployment options**: CPU-only or GPU-accelerated
+- **Auto-device detection**: Automaticale
+- **Optimized performance**: Device-specifd
+- **RESTful API** with simplee
+- **Docker containerizement
+- **Health check endpion
+n
+- **Reproducib
+ing
 
-## Quick Start
+arison
 
-### Using Docker Compose (Recommended)
+| Mode | Generation Time | Iments |
+|------|----------------|-|
+
+| **GPU** | 5-15 seconds | Excellent | 4-6GB VRAM | DA |
+
+tart
+
+are:
+
+### 🖥️ CPU-Only m)
+
+ only:
 
 ```bash
-# Build and start the service
-docker compose up --build
+# Bversion
 
-# The API will be available at http://localhost:8080
+
+8080
 ```
 
-### Using Docker directly
+### 🚀 quired)
+
+For:
+
+**Prerequisites:**
+port
+- [NVIDIA Container Toolkit](https://dlled
+- Dockeort
 
 ```bash
-# Build the image
-docker build -t stable-diffusion-api .
+# Buildn
+docker compose -f docker-compose.gpu.yml up --build
 
-# Run the container
-docker run -p 8080:8000 --memory=14g --cpus=7.0 stable-diffusion-api
+# T080
+
+
+### 🐳 mmands
+
+**CPU Version:**
+```bash
+docker build -f Dockerfile.cpu -t stable-diffusion-api-cpu .
+docker run -p 80
 ```
 
-## API Usage
+**GPU Version:**
+```bash
+docker build -f Dockerfile.gpu -t stable-diffusion-api-gpu .
+doc
+
+
+## API sage
 
 ### Health Check
 
+Check API status and device infotion:
+
 ```bash
-curl http://localhost:8080/health
+curl http://localhealth
 ```
+
+
+```json
+
+  "status": "healthy",
+pu",
+  "mode
+}
+```
+
+**GPU Respons
+```json
+{
+  "status": "healthy",
+  "device": "cuda",
+true,
+  "gpu_name": "NVIDIA GeForce RTX 4090",
+  "gpu_memory_gb": 24.0
+}
+``
 
 ### Generate Image
 
 Basic example (save response to file):
 ```bash
-curl -X POST http://localhost:8080/generate \
-  -H "Content-Type: application/json" \
+curl -X POST http://localhost:8080/generae \
+n" \
   -d '{
-    "prompt": "a beautiful sunset over mountains"
-  }' > response.json
+s"
+  }' > responn
 ```
 
-Generate with all parameters:
+Generate withrs:
 ```bash
 curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "a detailed portrait of a cat wearing a hat",
     "steps": 30,
-    "width": 256,
-    "height": 256,
+    "width": 512,
+    "height": 512,
     "guidance_scale": 8.0,
     "seed": 12345
-  }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64 -d > cat_portrait.png
+  }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64
 ```
 
-Alternative without jq (using grep and sed):
-```bash
-curl -X POST http://localhost:8080/generate \
-  -H "Content-Type: application/json" \
+Alternative without jq (using grep and s):
+ash
+curl -X POST htt
+" \
   -d '{
-    "prompt": "a simple flower",
-    "steps": 10,
-    "width": 256,
+",
+    "st0,
+ ,
     "height": 256
-  }' | grep -o '"image":"[^"]*"' | sed 's/"image":"//g' | sed 's/"$//g' | sed 's/data:image\/png;base64,//g' | base64 -d > flower.png
+  }' | grep -o '"image":"[^"]*"' | sed 's/"image":"//g' | sed 'ng
 ```
 
-### Saving Images with Helper Script
+### Saving Images with H
 
-The included `save_image.sh` script makes it easy to generate and save images (no jq required):
+The included `save_iU modes:
 
 ```bash
-# Make the script executable
-chmod +x save_image.sh
+table
+chmod +x save_image.h
 
 # Basic usage
 ./save_image.sh "a cute robot"
@@ -91,70 +147,72 @@ chmod +x save_image.sh
 # With custom filename
 ./save_image.sh "a cute robot" my_robot.png
 
-# With custom parameters (steps and size)
-./save_image.sh "a sunset landscape" sunset.png 30 256
-```
+size)
+./save_image.sh "a su 512
 
-The script automatically:
-- Handles JSON formatting and escaping
-- Shows generation progress
-- Extracts and decodes the base64 image
-- Provides error handling and feedback
-- Works without requiring jq installation
 
-### API Parameters
+The scry:
+-
+- Shows generation progress and timing
+- Extracts and
+- Provides erro
+- Works withoutn
+
+## rs
 
 **Required:**
-- `prompt` (string): Text description of the image to generate
+- `promte
 
 **Optional:**
-- `steps` (integer, default: 20): Number of inference steps
-  - **10-15**: Fast generation (~1-2 minutes)
-  - **20-30**: Balanced quality/speed (~2-4 minutes)
-  - **40-50**: High quality (~5-8 minutes)
-- `guidance_scale` (float, default: 7.5): How closely to follow the prompt
-  - **1.0-5.0**: More creative, less adherence to prompt
-  - **7.5-10.0**: Balanced (recommended)
-  - **10.0-20.0**: Strict adherence to prompt
-- `width` (integer, default: 512): Image width in pixels (max 512 for efficiency)
-- `height` (integer, default: 512): Image height in pixels (max 512 for efficiency)
-- `seed` (integer, optional): Random seed for reproducible results
-  - If not provided, a random seed is generated automatically
-  - Use the same seed with identical parameters to reproduce exact results
-  - Range: 0 to 4,294,967,295 (2^32 - 1)
+- `steps` (inteps
+  - **CPU defau)
+  - **GPU defaulity)
+- `guidance_scale` (flot
+ mpt
+  -
+mpt
+- `width` (integer, default: 512els
+  - **Cefficiency
+ ity
+- `height` (integer, default: 512): Imag)
+- `seed` (intelts
+  - If not provly
+  - Range: 0 to  - 1)
 
-### API Response
+#
 
-The API returns a JSON object with the following fields:
+:
 
 ```json
 {
   "success": true,
-  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
-  "prompt": "a beautiful sunset over mountains",
-  "steps": 20,
-  "guidance_scale": 7.5,
-  "dimensions": "512x512",
-  "seed": 1847392847
+  "image": "d",
+  "prompt": "
+ ": 30,
+  ": 7.5,
+
+  "seed": 1847392847,
+  "devi
 }
 ```
 
-**Response Fields:**
-- `success` (boolean): Whether the generation was successful
-- `image` (string): Base64-encoded PNG image with data URL prefix
-- `prompt` (string): The prompt that was used
-- `steps` (integer): Number of inference steps used
-- `guidance_scale` (float): Guidance scale value used
-- `dimensions` (string): Image dimensions in "WIDTHxHEIGHT" format
-- `seed` (integer): The seed value used (for reproducibility)
+**Response Fiel
+-
+- `x
 
-### Example API Calls
+- `steps` (integer): Numbeps used
+- `guid
+-at
+- `seed` (integer): The seed value ubility)
+- `device` (str")
 
-**Fast generation (small, few steps):**
+#alls
+
+:**
 ```json
-{
+
   "prompt": "a simple cat drawing",
-  "steps": 10,
+
   "width": 256,
   "height": 256
 }
@@ -164,102 +222,146 @@ The API returns a JSON object with the following fields:
 ```json
 {
   "prompt": "a detailed landscape painting",
-  "steps": 25,
-  "width": 384,
-  "height": 384,
+
+  "width":,
+12,
   "guidance_scale": 7.5
-}
+
 ```
 
-**High quality (max settings):**
-```json
+**H**
+son
 {
-  "prompt": "a photorealistic portrait",
+,
   "steps": 50,
-  "width": 512,
-  "height": 512,
+
+  "height": 768,
   "guidance_scale": 8.0
 }
 ```
 
 **Reproducible generation (with seed):**
 ```json
-{
-  "prompt": "a magical forest",
-  "seed": 42,
+
+  "prompt": "a magical f",
+ 42,
   "steps": 30
 }
 ```
 
-**Portrait orientation:**
-```json
-{
-  "prompt": "a tall building",
-  "width": 384,
-  "height": 512
-}
-```
+## Seed Functionality
 
-**Landscape orientation:**
-```json
-{
-  "prompt": "a wide mountain range",
-  "width": 512,
-  "height": 384
-}
-```
+The `seed` parameter con
 
-### Seed Functionality
+- **Random generation**:ime
+- **Reproducible results**: Usges
 
-The `seed` parameter controls the randomness of image generation:
-
-- **Random generation**: Omit the seed parameter for different results each time
-- **Reproducible results**: Use the same seed to get identical images
-- **Experimentation**: Try different prompts with the same seed to see variations
-- **Sharing**: Share seed values along with prompts to reproduce exact results
+- **Sharing**: Shart results
 
 **Example workflow:**
-1. Generate an image without specifying a seed
-2. Note the seed value returned in the response
-3. Use that seed with modified prompts or parameters to create variations
 
-## Testing
+2. Note the seed value ree
+3. Use that seed with modified promns
+tingthe included test script (works with both modes): use.cial commernse beforel licemodeiew the evlease r terms. P own licensehich has its model wv1.5sion e DiffuStable  uses thprojectThis  License
 
-Run the included test script:
 
-```bash
-python test_api.py
+##ld`
+p --bui|gpu].yml upu.[cmposecker-co dor compose -fckeUse `dobuild**: 4. **Rese file
+ocker-compole and dve Dockerfihe respecti Update toth**:. **For b
+3ts-gpu.txt`quiremen` and `re`app-gpu.pyes**: Edit  chang. **For GPU.txt`
+2punts-cme `require.py` andp-cpuap**: Edit `anges*For CPU chon:
+
+1. * applicatithey 
+
+To modifmentDevelop## y)
 ```
 
-This will test both the health endpoint and image generation, saving a test image as `generated_image.png`.
+callautomatied y (creattorache direcModel c     #            he/     
+└── cac script test      # API         .py pi test_aimages
+├──ving sapt for  Helper scri        #.sh      mage_isavees
+├── U dependenci    # GP-gpu.txt    ntsme├── requireencies
+ depend # CPU   txt    s-cpu.entuirem req├──n
+d applicatiomizeU-opti       # GPy           pu.p── app-g
+├tionplicad aptimizeop CPU-          #        pp-cpu.py aimage
+├──ocker  D GPU    #          e.gpu Dockerfilr image
+├── # CPU Docke       pu      kerfile.c
+├── Docent deploymGPUml       # pose.gpu.yocker-com
+├── dtdeploymen   # CPU cpu.yml    ker-compose.docfile
+├──  This       #         DME.md     `
+├── REAucture
 
-## Performance Notes
+`` Str File
 
-- **First run**: Model download (~4GB) and loading takes 5-10 minutes
-- **Generation time**: 2-5 minutes per image on CPU (depending on hardware)
-- **Memory usage**: ~3-4GB RAM during generation
-- **Optimizations**: 
-  - Attention slicing enabled for lower memory usage
-  - Safety checker disabled for faster inference
-  - Limited to 512x512 images for efficiency
+##ew portls to use n calPI A
+- Update0 is in use if 808ese filos-comp dockerange port in Chts:**
+-flicon**Port C
 
-## Resource Requirements
+rf ./cache`: `rm -corruptedar cache if Cleory
+- direct` n `./cached ite persisache ismodel c
+- The tionrnet connece intebl sta
+- Ensureues:**ownload IssModel D
 
-- **Minimum**: 4GB RAM, 2 CPU cores
-- **Recommended**: 8GB RAM, 4 CPU cores
-- **Storage**: ~6GB for model and dependencies
+**al Issuesener
+### Gsion
+U driver verCheck GPge
+-  Docker imalding thery rebuiibility
+- Tn compatrsio veDA Ensure CU
+-* Errors:*s
 
-## Troubleshooting
+**CUDAcationpli ape other GPU)
+- Closiedif modifsize (uce batch ednsions
+- Rmeuce image di
+- Red*AM:*t of VR`
 
-### Out of Memory Errors
-- Reduce image dimensions (e.g., 256x256)
-- Reduce inference steps
-- Increase Docker memory limit
+**Oue nvidia-smia:11.8-basnvidia/cudall --gpus  --rm r runess: `dockehas GPU accer re Dock
+- Ensustemon host sy works `nvidia-smi`k 
+- Checnstalleds iolkit iner ToontaiIDIA Cy NV- Verifected:**
+GPU Not Det**e Issues
 
-### Slow Generation
-- This is expected on CPU - consider reducing steps to 10-15 for faster results
-- Ensure no other heavy processes are running
+PU Mod
 
-### Model Download Issues
-- Ensure stable internet connection
-- The model cache is persisted in `./cache` directory
+### Gnnings are ruavy processeno other he
+- Ensure ps to 10-15cing steeduer rsid- conCPU on pected ex This is ion:**
+-ow Generat
+
+**Slimitr memory lrease Docke
+- Inc stepsce inferencedu256)
+- Re, 256xnsions (e.g.image dimece *
+- Redurrors:*Memory Et of 
+
+**OusMode Issue# CPU oting
+
+##roublesho1.8+
+
+## Tith CUDA 1tible wDA**: CompaCU
+- **mageonds per i-15 sec 5 time**:eneration **Gendencies
+-and depB for model : ~6Gorage**- **Stsystem RAM
+ 4GB AM**:nded)
+- **RGB+ recommeAM (64GB+ VRith PU w NVIDIA GPU**:de
+- **GPU Moage
+
+### Gs per imnute*: 2-5 miation time*- **Generndencies
+ depeandB for model **: ~6G **Storagees
+-PU cor, 4 C 8GB RAMended**:**Recomm
+-  coresRAM, 2 CPU: 4GB imum**ode
+- **MinU M
+
+### CPntsemeource Requir
+## Resading
+nlo-dowreoid lly to avhed locals are cac*: ModeCache*
+- **(GPU)768x768 r up to x512 (CPU) oized for 512tim*: Option* **Resoluad
+-wnlo ~4GB do **Size**:n-v1-5`
+-sioe-diffublwayml/staodel**: `run
+
+- **MInformation
+## Model g`.
+ed_image.pnat as `generest image, saving a tonneratie gemagnd iendpoint aealth oth the h test b willhis
+
+Tapi.py
+```hon test_sh
+pyt```ba
+
+
+
+Run 
+## Tes

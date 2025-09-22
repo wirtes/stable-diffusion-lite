@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  stable-diffusion-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    ports:
+      - "8080:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./cache:/root/.cache  # Cache models to avoid re-downloading
+    restart: unless-stopped
+    mem_limit: 14g  # Limit memory usage
+    cpus: 8.0      # Limit CPU usage
