@@ -51,7 +51,7 @@ curl -X POST http://localhost:8080/generate \
   }' > response.json
 ```
 
-Generate and extract image to PNG file:
+Generate and extract image to PNG file (requires jq):
 ```bash
 curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
@@ -63,20 +63,7 @@ curl -X POST http://localhost:8080/generate \
   }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64 -d > cat_portrait.png
 ```
 
-High quality generation with file save:
-```bash
-curl -X POST http://localhost:8080/generate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "a futuristic cityscape at night",
-    "steps": 50,
-    "guidance_scale": 8.0,
-    "width": 512,
-    "height": 512
-  }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64 -d > cityscape.png
-```
-
-Fast generation with automatic filename:
+Alternative without jq (using grep and sed):
 ```bash
 curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
@@ -85,34 +72,33 @@ curl -X POST http://localhost:8080/generate \
     "steps": 10,
     "width": 256,
     "height": 256
-  }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64 -d > flower_$(date +%s).png
+  }' | grep -o '"image":"[^"]*"' | sed 's/"image":"//g' | sed 's/"$//g' | sed 's/data:image\/png;base64,//g' | base64 -d > flower.png
 ```
 
-### Saving Images with a Simple Script
+### Saving Images with Helper Script
 
-For easier image saving, create this helper script:
+The included `save_image.sh` script makes it easy to generate and save images (no jq required):
 
 ```bash
-# save_image.sh
-#!/bin/bash
-PROMPT="$1"
-FILENAME="${2:-generated_$(date +%s).png}"
-
-curl -X POST http://localhost:8080/generate \
-  -H "Content-Type: application/json" \
-  -d "{\"prompt\": \"$PROMPT\"}" \
-  | jq -r '.image' \
-  | sed 's/data:image\/png;base64,//' \
-  | base64 -d > "$FILENAME"
-
-echo "Image saved as: $FILENAME"
-```
-
-Usage:
-```bash
+# Make the script executable
 chmod +x save_image.sh
+
+# Basic usage
+./save_image.sh "a cute robot"
+
+# With custom filename
 ./save_image.sh "a cute robot" my_robot.png
+
+# With custom parameters (steps and size)
+./save_image.sh "a sunset landscape" sunset.png 30 256
 ```
+
+The script automatically:
+- Handles JSON formatting and escaping
+- Shows generation progress
+- Extracts and decodes the base64 image
+- Provides error handling and feedback
+- Works without requiring jq installation
 
 ### Parameters
 
