@@ -1,5 +1,5 @@
 #!/bin/bash
-# save_image.sh - Generate and save Stable Diffusion images
+# save_image.sh - Generate and save Stable Diffusion images via API
 
 # Check if prompt is provided
 if [ -z "$1" ]; then
