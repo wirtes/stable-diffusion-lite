@@ -12,7 +12,7 @@ import io
 def test_health():
     """Test the health endpoint"""
     try:
-        response = requests.get("http://localhost:8000/health")
+        response = requests.get("http://localhost:8080/health")
         print(f"Health check: {response.status_code}")
         print(f"Response: {response.json()}")
         return response.status_code == 200
@@ -33,7 +33,7 @@ def test_generate_image(prompt="a cute cat sitting on a table"):
         
         print(f"Generating image for: '{prompt}'")
         response = requests.post(
-            "http://localhost:8000/generate",
+            "http://localhost:8080/generate",
             json=payload,
             timeout=300  # 5 minute timeout for CPU generation
         )

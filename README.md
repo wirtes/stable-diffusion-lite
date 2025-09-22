@@ -19,7 +19,7 @@ A lightweight, CPU-optimized Stable Diffusion API designed for systems with low 
 # Build and start the service
 docker compose up --build
 
-# The API will be available at http://localhost:8000
+# The API will be available at http://localhost:8080
 ```
 
 ### Using Docker directly
@@ -29,7 +29,7 @@ docker compose up --build
 docker build -t stable-diffusion-api .
 
 # Run the container
-docker run -p 8000:8000 --memory=4g --cpus=2.0 stable-diffusion-api
+docker run -p 8080:8000 --memory=4g --cpus=2.0 stable-diffusion-api
 ```
 
 ## API Usage
@@ -37,14 +37,14 @@ docker run -p 8000:8000 --memory=4g --cpus=2.0 stable-diffusion-api
 ### Health Check
 
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8080/health
 ```
 
 ### Generate Image
 
 Basic example:
 ```bash
-curl -X POST http://localhost:8000/generate \
+curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "a beautiful sunset over mountains"
@@ -53,7 +53,7 @@ curl -X POST http://localhost:8000/generate \
 
 With custom image size and inference steps:
 ```bash
-curl -X POST http://localhost:8000/generate \
+curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "a detailed portrait of a cat wearing a hat",
@@ -65,7 +65,7 @@ curl -X POST http://localhost:8000/generate \
 
 High quality (more steps, larger size):
 ```bash
-curl -X POST http://localhost:8000/generate \
+curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "a futuristic cityscape at night",
@@ -78,7 +78,7 @@ curl -X POST http://localhost:8000/generate \
 
 Fast generation (fewer steps, smaller size):
 ```bash
-curl -X POST http://localhost:8000/generate \
+curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "a simple flower",
