@@ -1,6 +1,7 @@
 import os
 import io
 import base64
+import random
 from flask import Flask, request, jsonify
 from diffusers import StableDiffusionPipeline
 import torch
@@ -68,12 +69,13 @@ def generate_image():
         guidance_scale = data.get('guidance_scale', 7.5)
         width = data.get('width', 512)
         height = data.get('height', 512)
+        seed = data.get('seed', random.randint(0, 2**32 - 1))  # Random seed if not provided
         
         # Limit image size for low resource systems
         width = min(width, 512)
         height = min(height, 512)
         
-        logger.info(f"Generating image for prompt: '{prompt}'")
+        logger.info(f"Generating image for prompt: '{prompt}' with seed: {seed}")
         
         # Generate image
         with torch.no_grad():
@@ -83,7 +85,7 @@ def generate_image():
                 guidance_scale=guidance_scale,
                 width=width,
                 height=height,
-                generator=torch.Generator().manual_seed(42)  # Fixed seed for consistency
+                generator=torch.Generator().manual_seed(seed)  # Use provided or random seed
             )
             
         image = result.images[0]
@@ -102,7 +104,8 @@ def generate_image():
             "prompt": prompt,
             "steps": num_inference_steps,
             "guidance_scale": guidance_scale,
-            "dimensions": f"{width}x{height}"
+            "dimensions": f"{width}x{height}",
+            "seed": seed
         })
         
     except Exception as e:

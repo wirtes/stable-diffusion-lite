@@ -29,7 +29,7 @@ docker compose up --build
 docker build -t stable-diffusion-api .
 
 # Run the container
-docker run -p 8080:8000 --memory=4g --cpus=2.0 stable-diffusion-api
+docker run -p 8080:8000 --memory=14g --cpus=7.0 stable-diffusion-api
 ```
 
 ## API Usage
@@ -51,7 +51,7 @@ curl -X POST http://localhost:8080/generate \
   }' > response.json
 ```
 
-Generate and extract image to PNG file (requires jq):
+Generate with all parameters:
 ```bash
 curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
@@ -59,7 +59,9 @@ curl -X POST http://localhost:8080/generate \
     "prompt": "a detailed portrait of a cat wearing a hat",
     "steps": 30,
     "width": 256,
-    "height": 256
+    "height": 256,
+    "guidance_scale": 8.0,
+    "seed": 12345
   }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64 -d > cat_portrait.png
 ```
 
@@ -100,45 +102,126 @@ The script automatically:
 - Provides error handling and feedback
 - Works without requiring jq installation
 
-### Parameters
+### API Parameters
 
-- `prompt` (required): Text description of the image to generate
-- `steps` (optional, default: 20): Number of inference steps
+**Required:**
+- `prompt` (string): Text description of the image to generate
+
+**Optional:**
+- `steps` (integer, default: 20): Number of inference steps
   - **10-15**: Fast generation (~1-2 minutes)
   - **20-30**: Balanced quality/speed (~2-4 minutes)
   - **40-50**: High quality (~5-8 minutes)
-- `guidance_scale` (optional, default: 7.5): How closely to follow the prompt (1.0-20.0)
-- `width` (optional, default: 512): Image width in pixels
-  - **256x256**: Fast, low memory usage
-  - **512x512**: Standard quality (recommended max for CPU)
-- `height` (optional, default: 512): Image height in pixels
+- `guidance_scale` (float, default: 7.5): How closely to follow the prompt
+  - **1.0-5.0**: More creative, less adherence to prompt
+  - **7.5-10.0**: Balanced (recommended)
+  - **10.0-20.0**: Strict adherence to prompt
+- `width` (integer, default: 512): Image width in pixels (max 512 for efficiency)
+- `height` (integer, default: 512): Image height in pixels (max 512 for efficiency)
+- `seed` (integer, optional): Random seed for reproducible results
+  - If not provided, a random seed is generated automatically
+  - Use the same seed with identical parameters to reproduce exact results
+  - Range: 0 to 4,294,967,295 (2^32 - 1)
 
-### Image Size Examples
+### API Response
 
-**Small (256x256)** - Fast generation, low memory:
+The API returns a JSON object with the following fields:
+
 ```json
-{"width": 256, "height": 256}
+{
+  "success": true,
+  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+  "prompt": "a beautiful sunset over mountains",
+  "steps": 20,
+  "guidance_scale": 7.5,
+  "dimensions": "512x512",
+  "seed": 1847392847
+}
 ```
 
-**Medium (384x384)** - Balanced size and speed:
+**Response Fields:**
+- `success` (boolean): Whether the generation was successful
+- `image` (string): Base64-encoded PNG image with data URL prefix
+- `prompt` (string): The prompt that was used
+- `steps` (integer): Number of inference steps used
+- `guidance_scale` (float): Guidance scale value used
+- `dimensions` (string): Image dimensions in "WIDTHxHEIGHT" format
+- `seed` (integer): The seed value used (for reproducibility)
+
+### Example API Calls
+
+**Fast generation (small, few steps):**
 ```json
-{"width": 384, "height": 384}
+{
+  "prompt": "a simple cat drawing",
+  "steps": 10,
+  "width": 256,
+  "height": 256
+}
 ```
 
-**Large (512x512)** - Best quality, slower generation:
+**Balanced quality:**
 ```json
-{"width": 512, "height": 512}
+{
+  "prompt": "a detailed landscape painting",
+  "steps": 25,
+  "width": 384,
+  "height": 384,
+  "guidance_scale": 7.5
+}
 ```
 
-**Portrait (384x512)** - Vertical orientation:
+**High quality (max settings):**
 ```json
-{"width": 384, "height": 512}
+{
+  "prompt": "a photorealistic portrait",
+  "steps": 50,
+  "width": 512,
+  "height": 512,
+  "guidance_scale": 8.0
+}
 ```
 
-**Landscape (512x384)** - Horizontal orientation:
+**Reproducible generation (with seed):**
 ```json
-{"width": 512, "height": 384}
+{
+  "prompt": "a magical forest",
+  "seed": 42,
+  "steps": 30
+}
 ```
+
+**Portrait orientation:**
+```json
+{
+  "prompt": "a tall building",
+  "width": 384,
+  "height": 512
+}
+```
+
+**Landscape orientation:**
+```json
+{
+  "prompt": "a wide mountain range",
+  "width": 512,
+  "height": 384
+}
+```
+
+### Seed Functionality
+
+The `seed` parameter controls the randomness of image generation:
+
+- **Random generation**: Omit the seed parameter for different results each time
+- **Reproducible results**: Use the same seed to get identical images
+- **Experimentation**: Try different prompts with the same seed to see variations
+- **Sharing**: Share seed values along with prompts to reproduce exact results
+
+**Example workflow:**
+1. Generate an image without specifying a seed
+2. Note the seed value returned in the response
+3. Use that seed with modified prompts or parameters to create variations
 
 ## Testing
 
