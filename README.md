@@ -42,16 +42,16 @@ curl http://localhost:8080/health
 
 ### Generate Image
 
-Basic example:
+Basic example (save response to file):
 ```bash
 curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "a beautiful sunset over mountains"
-  }'
+  }' > response.json
 ```
 
-With custom image size and inference steps:
+Generate and extract image to PNG file:
 ```bash
 curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
@@ -60,10 +60,10 @@ curl -X POST http://localhost:8080/generate \
     "steps": 30,
     "width": 256,
     "height": 256
-  }'
+  }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64 -d > cat_portrait.png
 ```
 
-High quality (more steps, larger size):
+High quality generation with file save:
 ```bash
 curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
@@ -73,10 +73,10 @@ curl -X POST http://localhost:8080/generate \
     "guidance_scale": 8.0,
     "width": 512,
     "height": 512
-  }'
+  }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64 -d > cityscape.png
 ```
 
-Fast generation (fewer steps, smaller size):
+Fast generation with automatic filename:
 ```bash
 curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
@@ -85,7 +85,33 @@ curl -X POST http://localhost:8080/generate \
     "steps": 10,
     "width": 256,
     "height": 256
-  }'
+  }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64 -d > flower_$(date +%s).png
+```
+
+### Saving Images with a Simple Script
+
+For easier image saving, create this helper script:
+
+```bash
+# save_image.sh
+#!/bin/bash
+PROMPT="$1"
+FILENAME="${2:-generated_$(date +%s).png}"
+
+curl -X POST http://localhost:8080/generate \
+  -H "Content-Type: application/json" \
+  -d "{\"prompt\": \"$PROMPT\"}" \
+  | jq -r '.image' \
+  | sed 's/data:image\/png;base64,//' \
+  | base64 -d > "$FILENAME"
+
+echo "Image saved as: $FILENAME"
+```
+
+Usage:
+```bash
+chmod +x save_image.sh
+./save_image.sh "a cute robot" my_robot.png
 ```
 
 ### Parameters
