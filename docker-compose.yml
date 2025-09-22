@@ -10,5 +10,5 @@ services:
     volumes:
       - ./cache:/root/.cache  # Cache models to avoid re-downloading
     restart: unless-stopped
-    mem_limit: 6g  # Limit memory usage
-    cpus: 4.0      # Limit CPU usage
+    mem_limit: 14g  # Limit memory usage
+    cpus: 8.0      # Limit CPU usage
