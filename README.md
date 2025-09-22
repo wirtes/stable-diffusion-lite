@@ -230,13 +230,28 @@ python test_api.py
 ### GPU Mode Issues
 
 **Docker Image Not Found:**
-```bash
-# Pull the CUDA image manually
-docker pull nvidia/cuda:11.8-devel-ubuntu22.04
 
-# For older GPUs, try CUDA 11.0
-# Edit Dockerfile.gpu and change first line to:
-# FROM nvidia/cuda:11.0-devel-ubuntu20.04
+If the CUDA image fails to pull, try the PyTorch-based alternative:
+
+```bash
+# Use the PyTorch-based Dockerfile instead
+docker build -f Dockerfile.gpu.pytorch -t stable-diffusion-api-gpu .
+docker run --gpus all -p 8080:8000 stable-diffusion-api-gpu
+
+# Or update docker-compose.gpu.yml to use:
+# dockerfile: Dockerfile.gpu.pytorch
+```
+
+**Manual image troubleshooting:**
+```bash
+# Check available CUDA images
+docker search nvidia/cuda
+
+# Try pulling manually
+docker pull nvidia/cuda:11.7-devel-ubuntu20.04
+
+# Alternative: use PyTorch base image (more reliable)
+docker pull pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
 ```
 
 **GPU Not Detected:**
