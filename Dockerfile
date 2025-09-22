@@ -12,7 +12,10 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
+# Install PyTorch CPU version first
+RUN pip install --no-cache-dir torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cpu
+
+# Install other Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
