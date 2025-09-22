@@ -25,11 +25,18 @@ echo "Generating image with prompt: '$PROMPT'"
 echo "Steps: $STEPS, Size: ${SIZE}x${SIZE}"
 echo "This may take 2-5 minutes on CPU..."
 
+# Record start time
+START_TIME=$(date +%s)
+
 # Make API call and save to temp file
 TEMP_FILE=$(mktemp)
 curl -s -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
   -d "$JSON_PAYLOAD" > "$TEMP_FILE"
+
+# Calculate generation time
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
 
 # Check if request was successful (look for "success":true)
 if grep -q '"success"[[:space:]]*:[[:space:]]*true' "$TEMP_FILE"; then
@@ -41,7 +48,17 @@ if grep -q '"success"[[:space:]]*:[[:space:]]*true' "$TEMP_FILE"; then
     
     # Decode and save image
     echo "$BASE64_DATA" | base64 -d > "$FILENAME"
-    echo "✓ Image saved as: $FILENAME"
+    
+    # Format duration nicely
+    if [ $DURATION -ge 60 ]; then
+        MINUTES=$((DURATION / 60))
+        SECONDS=$((DURATION % 60))
+        TIME_STR="${MINUTES}m ${SECONDS}s"
+    else
+        TIME_STR="${DURATION}s"
+    fi
+    
+    echo "✓ Image saved as: $FILENAME (generated in $TIME_STR)"
 else
     echo "✗ Error generating image:"
     # Try to extract error message
