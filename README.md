@@ -1,113 +1,113 @@
 # Dockerized Stable Diffusion API
 
-A flexible Stable Diffusion API with both CPU and GPU support, designed to work efficiently on any sy
+A flexible Stable Diffusion API with both CPU and GPU support, designed to work efficiently on any system.
 
 ## Features
 
 - **Dual deployment options**: CPU-only or GPU-accelerated
-- **Auto-device detection**: Automaticale
-- **Optimized performance**: Device-specifd
-- **RESTful API** with simplee
-- **Docker containerizement
-- **Health check endpion
-n
-- **Reproducib
-ing
+- **Auto-device detection**: Automatically uses GPU when available in GPU mode
+- **Optimized performance**: Device-specific optimizations for best speed
+- **RESTful API** with simple JSON interface
+- **Docker containerized** for easy deployment
+- **Health check endpoint** with device information
+- **Base64 image output** for easy integration
+- **Reproducible generation** with seed support
+- **Memory efficient** with attention slicing and model offloading
 
-arison
+## Performance Comparison
 
-| Mode | Generation Time | Iments |
-|------|----------------|-|
+| Mode | Generation Time | Image Quality | Memory Usage | Requirements |
+|------|----------------|---------------|--------------|--------------|
+| **CPU** | 2-5 minutes | Good | 3-4GB RAM | Any system |
+| **GPU** | 5-15 seconds | Excellent | 4-6GB VRAM | NVIDIA GPU + CUDA |
 
-| **GPU** | 5-15 seconds | Excellent | 4-6GB VRAM | DA |
+## Quick Start
 
-tart
+Choose the deployment method based on your hardware:
 
-are:
+### 🖥️ CPU-Only Mode (Any System)
 
-### 🖥️ CPU-Only m)
-
- only:
+For systems without NVIDIA GPU or when you want to use CPU only:
 
 ```bash
-# Bversion
+# Build and start CPU version
+docker compose -f docker-compose.cpu.yml up --build
 
-
-8080
+# The API will be available at http://localhost:8080
 ```
 
-### 🚀 quired)
+### 🚀 GPU-Accelerated Mode (NVIDIA GPU Required)
 
-For:
+For systems with NVIDIA GPU and Docker GPU support:
 
 **Prerequisites:**
-port
-- [NVIDIA Container Toolkit](https://dlled
-- Dockeort
+- NVIDIA GPU with CUDA support
+- [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed
+- Docker Compose with GPU support
 
 ```bash
-# Buildn
+# Build and start GPU version
 docker compose -f docker-compose.gpu.yml up --build
 
-# T080
+# The API will be available at http://localhost:8080
+```
 
-
-### 🐳 mmands
+### 🐳 Direct Docker Commands
 
 **CPU Version:**
 ```bash
 docker build -f Dockerfile.cpu -t stable-diffusion-api-cpu .
-docker run -p 80
+docker run -p 8080:8000 --memory=4g --cpus=2.0 stable-diffusion-api-cpu
 ```
 
 **GPU Version:**
 ```bash
 docker build -f Dockerfile.gpu -t stable-diffusion-api-gpu .
-doc
+docker run --gpus all -p 8080:8000 stable-diffusion-api-gpu
+```
 
-
-## API sage
+## API Usage
 
 ### Health Check
 
-Check API status and device infotion:
+Check API status and device information:
 
 ```bash
-curl http://localhealth
+curl http://localhost:8080/health
 ```
 
-
+**CPU Response:**
 ```json
-
+{
   "status": "healthy",
-pu",
-  "mode
+  "device": "cpu",
+  "model_loaded": true
 }
 ```
 
-**GPU Respons
+**GPU Response:**
 ```json
 {
   "status": "healthy",
   "device": "cuda",
-true,
+  "model_loaded": true,
   "gpu_name": "NVIDIA GeForce RTX 4090",
   "gpu_memory_gb": 24.0
 }
-``
+```
 
 ### Generate Image
 
-Basic example (save response to file):
+Basic example:
 ```bash
-curl -X POST http://localhost:8080/generae \
-n" \
+curl -X POST http://localhost:8080/generate \
+  -H "Content-Type: application/json" \
   -d '{
-s"
-  }' > responn
+    "prompt": "a beautiful sunset over mountains"
+  }'
 ```
 
-Generate withrs:
+Generate with all parameters:
 ```bash
 curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
@@ -118,250 +118,178 @@ curl -X POST http://localhost:8080/generate \
     "height": 512,
     "guidance_scale": 8.0,
     "seed": 12345
-  }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64
+  }' | jq -r '.image' | sed 's/data:image\/png;base64,//' | base64 -d > cat_portrait.png
 ```
 
-Alternative without jq (using grep and s):
-ash
-curl -X POST htt
-" \
-  -d '{
-",
-    "st0,
- ,
-    "height": 256
-  }' | grep -o '"image":"[^"]*"' | sed 's/"image":"//g' | sed 'ng
-```
+### Saving Images with Helper Script
 
-### Saving Images with H
-
-The included `save_iU modes:
+The included `save_image.sh` script works with both CPU and GPU modes:
 
 ```bash
-table
-chmod +x save_image.h
+# Make the script executable
+chmod +x save_image.sh
 
 # Basic usage
 ./save_image.sh "a cute robot"
 
-# With custom filename
-./save_image.sh "a cute robot" my_robot.png
+# With custom parameters
+./save_image.sh "a sunset landscape" sunset.png 30 512
+```
 
-size)
-./save_image.sh "a su 512
-
-
-The scry:
--
-- Shows generation progress and timing
-- Extracts and
-- Provides erro
-- Works withoutn
-
-## rs
+## API Parameters
 
 **Required:**
-- `promte
+- `prompt` (string): Text description of the image to generate
 
 **Optional:**
-- `steps` (inteps
-  - **CPU defau)
-  - **GPU defaulity)
-- `guidance_scale` (flot
- mpt
-  -
-mpt
-- `width` (integer, default: 512els
-  - **Cefficiency
- ity
-- `height` (integer, default: 512): Imag)
-- `seed` (intelts
-  - If not provly
-  - Range: 0 to  - 1)
+- `steps` (integer): Number of inference steps
+  - **CPU default**: 20 (10-50 range)
+  - **GPU default**: 30 (20-100 range)
+- `guidance_scale` (float, default: 7.5): How closely to follow the prompt (1.0-20.0)
+- `width` (integer, default: 512): Image width in pixels
+  - **CPU max**: 512px
+  - **GPU max**: 768px
+- `height` (integer, default: 512): Image height in pixels
+- `seed` (integer, optional): Random seed for reproducible results
 
-#
-
-:
+## API Response
 
 ```json
 {
   "success": true,
-  "image": "d",
-  "prompt": "
- ": 30,
-  ": 7.5,
-
+  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+  "prompt": "a beautiful sunset over mountains",
+  "steps": 30,
+  "guidance_scale": 7.5,
+  "dimensions": "512x512",
   "seed": 1847392847,
-  "devi
+  "device": "cuda"
 }
 ```
 
-**Response Fiel
--
-- `x
+## Example API Calls
 
-- `steps` (integer): Numbeps used
-- `guid
--at
-- `seed` (integer): The seed value ubility)
-- `device` (str")
-
-#alls
-
-:**
+**Fast generation:**
 ```json
-
+{
   "prompt": "a simple cat drawing",
-
+  "steps": 15,
   "width": 256,
   "height": 256
 }
 ```
 
-**Balanced quality:**
+**High quality (GPU):**
 ```json
 {
-  "prompt": "a detailed landscape painting",
-
-  "width":,
-12,
-  "guidance_scale": 7.5
-
-```
-
-**H**
-son
-{
-,
+  "prompt": "a photorealistic portrait",
   "steps": 50,
-
+  "width": 768,
   "height": 768,
   "guidance_scale": 8.0
 }
 ```
 
-**Reproducible generation (with seed):**
+**Reproducible generation:**
 ```json
-
-  "prompt": "a magical f",
- 42,
+{
+  "prompt": "a magical forest",
+  "seed": 42,
   "steps": 30
 }
 ```
 
-## Seed Functionality
+## Testing
 
-The `seed` parameter con
+Run the test script (works with both modes):
 
-- **Random generation**:ime
-- **Reproducible results**: Usges
-
-- **Sharing**: Shart results
-
-**Example workflow:**
-
-2. Note the seed value ree
-3. Use that seed with modified promns
-tingthe included test script (works with both modes): use.cial commernse beforel licemodeiew the evlease r terms. P own licensehich has its model wv1.5sion e DiffuStable  uses thprojectThis  License
-
-
-##ld`
-p --bui|gpu].yml upu.[cmposecker-co dor compose -fckeUse `dobuild**: 4. **Rese file
-ocker-compole and dve Dockerfihe respecti Update toth**:. **For b
-3ts-gpu.txt`quiremen` and `re`app-gpu.pyes**: Edit  chang. **For GPU.txt`
-2punts-cme `require.py` andp-cpuap**: Edit `anges*For CPU chon:
-
-1. * applicatithey 
-
-To modifmentDevelop## y)
+```bash
+python test_api.py
 ```
 
-callautomatied y (creattorache direcModel c     #            he/     
-└── cac script test      # API         .py pi test_aimages
-├──ving sapt for  Helper scri        #.sh      mage_isavees
-├── U dependenci    # GP-gpu.txt    ntsme├── requireencies
- depend # CPU   txt    s-cpu.entuirem req├──n
-d applicatiomizeU-opti       # GPy           pu.p── app-g
-├tionplicad aptimizeop CPU-          #        pp-cpu.py aimage
-├──ocker  D GPU    #          e.gpu Dockerfilr image
-├── # CPU Docke       pu      kerfile.c
-├── Docent deploymGPUml       # pose.gpu.yocker-com
-├── dtdeploymen   # CPU cpu.yml    ker-compose.docfile
-├──  This       #         DME.md     `
-├── REAucture
+## Model Information
 
-`` Str File
+- **Model**: `runwayml/stable-diffusion-v1-5`
+- **Size**: ~4GB download
+- **Cache**: Models cached in `./cache` directory
 
-##ew portls to use n calPI A
-- Update0 is in use if 808ese filos-comp dockerange port in Chts:**
--flicon**Port C
+## Resource Requirements
 
-rf ./cache`: `rm -corruptedar cache if Cleory
-- direct` n `./cached ite persisache ismodel c
-- The tionrnet connece intebl sta
-- Ensureues:**ownload IssModel D
+### CPU Mode
+- **Minimum**: 4GB RAM, 2 CPU cores
+- **Recommended**: 8GB RAM, 4 CPU cores
+- **Generation time**: 2-5 minutes per image
 
-**al Issuesener
-### Gsion
-U driver verCheck GPge
--  Docker imalding thery rebuiibility
-- Tn compatrsio veDA Ensure CU
--* Errors:*s
+### GPU Mode
+- **GPU**: NVIDIA GPU with 4GB+ VRAM
+- **RAM**: 4GB system RAM
+- **Generation time**: 5-15 seconds per image
 
-**CUDAcationpli ape other GPU)
-- Closiedif modifsize (uce batch ednsions
-- Rmeuce image di
-- Red*AM:*t of VR`
+## Troubleshooting
 
-**Oue nvidia-smia:11.8-basnvidia/cudall --gpus  --rm r runess: `dockehas GPU accer re Dock
-- Ensustemon host sy works `nvidia-smi`k 
-- Checnstalleds iolkit iner ToontaiIDIA Cy NV- Verifected:**
-GPU Not Det**e Issues
+### GPU Mode Issues
 
-PU Mod
+**Docker Image Not Found:**
+```bash
+# Pull the CUDA image manually
+docker pull nvidia/cuda:11.8-devel-ubuntu22.04
 
-### Gnnings are ruavy processeno other he
-- Ensure ps to 10-15cing steeduer rsid- conCPU on pected ex This is ion:**
--ow Generat
+# For older GPUs, try CUDA 11.0
+# Edit Dockerfile.gpu and change first line to:
+# FROM nvidia/cuda:11.0-devel-ubuntu20.04
+```
 
-**Slimitr memory lrease Docke
-- Inc stepsce inferencedu256)
-- Re, 256xnsions (e.g.image dimece *
-- Redurrors:*Memory Et of 
+**GPU Not Detected:**
+- Install NVIDIA Container Toolkit: [Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+- Test GPU access: `docker run --rm --gpus all nvidia/cuda:11.8-devel-ubuntu22.04 nvidia-smi`
+- Check driver: `nvidia-smi`
 
-**OusMode Issue# CPU oting
+**Build Errors:**
+```bash
+# Clean rebuild
+docker compose -f docker-compose.gpu.yml build --no-cache
 
-##roublesho1.8+
+# Check CUDA compatibility with your GPU driver
+nvidia-smi
+```
 
-## Tith CUDA 1tible wDA**: CompaCU
-- **mageonds per i-15 sec 5 time**:eneration **Gendencies
--and depB for model : ~6Gorage**- **Stsystem RAM
- 4GB AM**:nded)
-- **RGB+ recommeAM (64GB+ VRith PU w NVIDIA GPU**:de
-- **GPU Moage
+### CPU Mode Issues
 
-### Gs per imnute*: 2-5 miation time*- **Generndencies
- depeandB for model **: ~6G **Storagees
--PU cor, 4 C 8GB RAMended**:**Recomm
--  coresRAM, 2 CPU: 4GB imum**ode
-- **MinU M
+**Out of Memory:**
+- Reduce image dimensions to 256x256
+- Reduce inference steps to 10-15
+- Increase Docker memory limit
 
-### CPntsemeource Requir
-## Resading
-nlo-dowreoid lly to avhed locals are cac*: ModeCache*
-- **(GPU)768x768 r up to x512 (CPU) oized for 512tim*: Option* **Resoluad
--wnlo ~4GB do **Size**:n-v1-5`
--sioe-diffublwayml/staodel**: `run
+**Slow Generation:**
+- Expected on CPU - reduce steps for speed
+- Ensure no other heavy processes running
 
-- **MInformation
-## Model g`.
-ed_image.pnat as `generest image, saving a tonneratie gemagnd iendpoint aealth oth the h test b willhis
+### General Issues
 
-Tapi.py
-```hon test_sh
-pyt```ba
+**Port Conflicts:**
+- Change port in docker-compose files if 8080 is in use
 
+**Model Download Issues:**
+- Ensure stable internet connection
+- Clear cache if corrupted: `rm -rf ./cache`
 
+## File Structure
 
-Run 
-## Tes
+```
+├── README.md                    # This file
+├── docker-compose.cpu.yml       # CPU deployment
+├── docker-compose.gpu.yml       # GPU deployment
+├── Dockerfile.cpu              # CPU Docker image
+├── Dockerfile.gpu              # GPU Docker image
+├── app-cpu.py                  # CPU-optimized application
+├── app-gpu.py                  # GPU-optimized application
+├── requirements-cpu.txt        # CPU dependencies
+├── requirements-gpu.txt        # GPU dependencies
+├── save_image.sh              # Helper script
+├── test_api.py                # Test script
+└── cache/                     # Model cache (auto-created)
+```
+
+## License
+
+This project uses Stable Diffusion v1.5. Please review the model license before commercial use.
