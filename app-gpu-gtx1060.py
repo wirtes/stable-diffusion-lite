@@ -18,11 +18,11 @@ app = Flask(__name__)
 pipeline = None
 
 def load_model():
-    """Load the Stable Diffusion model with GPU optimization"""
+    """Load the Stable Diffusion model optimized for GTX 1060"""
     global pipeline
     
     try:
-        logger.info("Loading Stable Diffusion model...")
+        logger.info("Loading Stable Diffusion model for GTX 1060...")
         
         # Auto-detect device
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -31,40 +31,49 @@ def load_model():
         if device == "cuda":
             logger.info(f"GPU: {torch.cuda.get_device_name(0)}")
             logger.info(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+            
+            # Check if it's a GTX 1060 (compute capability 6.1)
+            gpu_name = torch.cuda.get_device_name(0).lower()
+            is_gtx_1060 = "gtx 1060" in gpu_name or "1060" in gpu_name
+            
+            if is_gtx_1060:
+                logger.info("GTX 1060 detected - applying optimizations")
         
         model_id = "runwayml/stable-diffusion-v1-5"
         
-        # Choose optimal settings based on device
+        # GTX 1060 optimizations - use float16 but with more conservative settings
         torch_dtype = torch.float16 if device == "cuda" else torch.float32
         
         # Suppress tokenizer warnings
-        import os
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         
-        # Load pipeline with device-specific optimizations
+        # Load pipeline with GTX 1060-specific optimizations
         pipeline = StableDiffusionPipeline.from_pretrained(
             model_id,
             torch_dtype=torch_dtype,
-            safety_checker=None,  # Disable safety checker for speed
+            safety_checker=None,  # Disable safety checker for speed and memory
             requires_safety_checker=False,
-            use_safetensors=True  # Use safer tensor format
+            use_safetensors=True
         )
         
-        # Move to device and optimize
+        # Move to device and optimize for GTX 1060
         pipeline = pipeline.to(device)
         
         if device == "cuda":
-            # GPU optimizations
-            pipeline.enable_memory_efficient_attention()
-            pipeline.enable_model_cpu_offload()  # Offload to CPU when not in use
+            # GTX 1060 specific optimizations
+            pipeline.enable_attention_slicing()  # Reduce memory usage
+            pipeline.enable_sequential_cpu_offload()  # Offload to CPU when not in use
+            
+            # Don't use xformers on older GPUs as it may not be compatible
             try:
+                # Only enable if available and compatible
                 pipeline.enable_xformers_memory_efficient_attention()
                 logger.info("xformers optimization enabled")
             except Exception as e:
-                logger.warning(f"xformers not available: {e}")
+                logger.info(f"xformers not available (normal for GTX 1060): {e}")
         else:
             # CPU optimizations
-            pipeline.enable_attention_slicing()  # Reduce memory usage
+            pipeline.enable_attention_slicing()
         
         logger.info("Model loaded successfully!")
         
@@ -83,6 +92,11 @@ def health_check():
     if torch.cuda.is_available():
         device_info["gpu_name"] = torch.cuda.get_device_name(0)
         device_info["gpu_memory_gb"] = round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 1)
+        
+        # Add GTX 1060 specific info
+        gpu_name = torch.cuda.get_device_name(0).lower()
+        if "gtx 1060" in gpu_name or "1060" in gpu_name:
+            device_info["optimized_for"] = "GTX 1060"
     
     return jsonify({"status": "healthy", **device_info})
 
@@ -100,16 +114,20 @@ def generate_image():
             
         prompt = data['prompt']
         
-        # Optional parameters with device-appropriate defaults
+        # GTX 1060 optimized defaults
         device = "cuda" if torch.cuda.is_available() else "cpu"
         
         if device == "cuda":
-            # GPU defaults - can handle more steps and larger images
-            num_inference_steps = data.get('steps', 30)
+            # GTX 1060 conservative defaults for 6GB VRAM
+            num_inference_steps = data.get('steps', 25)  # Slightly fewer steps
             width = data.get('width', 512)
             height = data.get('height', 512)
+            
+            # Limit to 512x512 for GTX 1060 to avoid VRAM issues
+            width = min(width, 512)
+            height = min(height, 512)
         else:
-            # CPU defaults - conservative for performance
+            # CPU defaults
             num_inference_steps = data.get('steps', 20)
             width = data.get('width', 512)
             height = data.get('height', 512)
@@ -117,15 +135,14 @@ def generate_image():
         guidance_scale = data.get('guidance_scale', 7.5)
         seed = data.get('seed', random.randint(0, 2**32 - 1))
         
-        # Limit image size based on device
-        max_size = 768 if device == "cuda" else 512
-        width = min(width, max_size)
-        height = min(height, max_size)
-        
         logger.info(f"Generating image for prompt: '{prompt}' with seed: {seed} on {device}")
         
-        # Generate image
+        # Generate image with GTX 1060 optimizations
         generator = torch.Generator(device=device).manual_seed(seed)
+        
+        # Clear CUDA cache before generation (important for GTX 1060)
+        if device == "cuda":
+            torch.cuda.empty_cache()
         
         with torch.no_grad():
             result = pipeline(
@@ -138,6 +155,10 @@ def generate_image():
             )
             
         image = result.images[0]
+        
+        # Clear CUDA cache after generation
+        if device == "cuda":
+            torch.cuda.empty_cache()
         
         # Convert image to base64
         img_buffer = io.BytesIO()
@@ -160,6 +181,11 @@ def generate_image():
         
     except Exception as e:
         logger.error(f"Error generating image: {str(e)}")
+        
+        # Clear CUDA cache on error
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

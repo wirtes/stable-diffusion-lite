@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.1.0-cuda12.1-cudnn8-devel
+FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -11,11 +11,11 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements-gpu.txt .
 
-# PyTorch is already installed in the base image, just install other dependencies
+# Install dependencies (PyTorch already included in base image)
 RUN pip install --no-cache-dir -r requirements-gpu.txt
 
-# Copy application code
-COPY app-gpu.py app.py
+# Copy GTX 1060 optimized application
+COPY app-gpu-gtx1060.py app.py
 COPY . .
 
 # Expose port

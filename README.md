@@ -40,6 +40,14 @@ docker compose -f docker-compose.cpu.yml up --build
 
 For systems with NVIDIA GPU and Docker GPU support:
 
+**For GTX 1060 users:**
+```bash
+# Use GTX 1060 optimized version
+docker compose -f docker-compose.gpu.gtx1060.yml up --build
+```
+
+**For newer GPUs (RTX series, etc.):**
+
 **Prerequisites:**
 - NVIDIA GPU with CUDA support
 - [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed
@@ -62,8 +70,13 @@ docker run -p 8080:8000 --memory=4g --cpus=2.0 stable-diffusion-api-cpu
 
 **GPU Version:**
 ```bash
+# For newer GPUs
 docker build -f Dockerfile.gpu -t stable-diffusion-api-gpu .
 docker run --gpus all -p 8080:8000 stable-diffusion-api-gpu
+
+# For GTX 1060
+docker build -f Dockerfile.gpu.gtx1060 -t stable-diffusion-api-gtx1060 .
+docker run --gpus all -p 8080:8000 stable-diffusion-api-gtx1060
 ```
 
 ## API Usage
@@ -224,6 +237,57 @@ python test_api.py
 - **GPU**: NVIDIA GPU with 4GB+ VRAM
 - **RAM**: 4GB system RAM
 - **Generation time**: 5-15 seconds per image
+
+## Expected Startup Messages
+
+When running the GPU version, you may see these **normal** messages:
+
+```
+** DEPRECATION NOTICE! **
+THIS IMAGE IS DEPRECATED and is scheduled for DELETION.
+```
+This is just a warning about the base CUDA image - it doesn't affect functionality.
+
+```
+FutureWarning: `clean_up_tokenization_spaces` was not set.
+```
+This is a harmless warning from the transformers library.
+
+**Success indicators:**
+- `INFO:__main__:Loading Stable Diffusion model...`
+- `Loading pipeline components...`
+- `Model loaded successfully!`
+- API responds at `http://localhost:8080/health`
+
+**⚠️ Performance Issue: Same Speed as CPU?**
+
+If GPU and CPU versions have the same performance (~2-5 minutes), the GPU isn't being used:
+
+```bash
+# Test GPU detection and performance
+python test-gpu-usage.py
+
+# Check Docker GPU access
+chmod +x check-docker-gpu.sh
+./check-docker-gpu.sh
+
+# Check API health (should show "device": "cuda")
+curl http://localhost:8080/health
+```
+
+**Common fixes:**
+```bash
+# 1. Restart Docker service
+sudo systemctl restart docker
+
+# 2. Rebuild container with GPU access
+docker compose -f docker-compose.gpu.yml down
+docker compose -f docker-compose.gpu.yml build --no-cache
+docker compose -f docker-compose.gpu.yml up
+
+# 3. Verify GPU access in container
+docker run --rm --gpus all nvidia/cuda:11.7-base-ubuntu20.04 nvidia-smi
+```
 
 ## Troubleshooting
 

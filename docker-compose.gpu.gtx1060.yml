@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  stable-diffusion-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu.gtx1060
+    ports:
+      - "8080:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - ./cache:/root/.cache  # Cache models to avoid re-downloading
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
