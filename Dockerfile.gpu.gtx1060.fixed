@@ -1,0 +1,41 @@
+FROM nvidia/cuda:11.7-runtime-ubuntu20.04
+
+# Install Python and system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create python symlink
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# Upgrade pip
+RUN python -m pip install --upgrade pip
+
+# Set working directory
+WORKDIR /app
+
+# Install PyTorch with CUDA 11.7 support specifically
+RUN pip install torch==2.0.1+cu117 torchvision==0.15.2+cu117 --index-url https://download.pytorch.org/whl/cu117
+
+# Copy requirements and install other dependencies
+COPY requirements-gpu.txt .
+RUN pip install --no-cache-dir -r requirements-gpu.txt
+
+# Copy GTX 1060 optimized application
+COPY app-gpu-gtx1060.py app.py
+COPY . .
+
+# Set environment variables for CUDA
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV CUDA_VISIBLE_DEVICES=0
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# Expose port
+EXPOSE 8000
+
+# Run the application
+CMD ["python", "app.py"]
