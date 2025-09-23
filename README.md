@@ -257,10 +257,72 @@ docker pull pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
 
 **For Debian users:** The PyTorch-based image is recommended as it's more universally available.
 
-**GPU Not Detected:**
-- Install NVIDIA Container Toolkit: [Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
-- Test GPU access: `docker run --rm --gpus all nvidia/cuda:11.8-devel-ubuntu22.04 nvidia-smi`
-- Check driver: `nvidia-smi`
+**GPU Not Detected / "could not select device driver nvidia":**
+
+This means NVIDIA Container Toolkit isn't installed. Here's how to fix it on **Debian**:
+
+```bash
+# 1. First, verify you have NVIDIA drivers installed
+nvidia-smi
+
+# 2. Install NVIDIA Container Toolkit for Debian
+# Add NVIDIA's GPG key
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+# Add repository (Debian-specific)
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+  sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+# Install the toolkit
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+
+# 3. Configure Docker to use NVIDIA runtime
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+
+# 4. Test GPU access
+docker run --rm --gpus all nvidia/cuda:11.7-base-ubuntu20.04 nvidia-smi
+```
+
+**For older Debian versions (if above fails):**
+```bash
+# Alternative method for Debian 10/11
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+
+sudo apt-get update
+sudo apt-get install -y nvidia-docker2
+sudo systemctl restart docker
+```
+
+**Quick Setup Script:**
+```bash
+# Use the automated setup script
+chmod +x setup-nvidia-docker.sh
+./setup-nvidia-docker.sh
+```
+
+**Alternative: Use CPU mode while setting up GPU:**
+```bash
+# Run CPU version instead (works immediately)
+docker compose -f docker-compose.cpu.yml up --build
+```
+
+**Manual verification steps:**
+```bash
+# 1. Check NVIDIA drivers
+nvidia-smi
+
+# 2. Check Docker can access GPU
+docker run --rm --gpus all nvidia/cuda:11.7-base-ubuntu20.04 nvidia-smi
+
+# 3. If step 2 fails, restart Docker
+sudo systemctl restart docker
+```
 
 **Build Errors:**
 ```bash
