@@ -321,6 +321,10 @@ sudo systemctl restart docker
 
 **Complete Setup Process:**
 ```bash
+# 0. Diagnose any issues first
+chmod +x debug-nvidia.sh
+./debug-nvidia.sh
+
 # 1. Install NVIDIA drivers (if needed)
 chmod +x install-nvidia-drivers.sh
 ./install-nvidia-drivers.sh
@@ -332,6 +336,23 @@ chmod +x setup-nvidia-docker.sh
 
 # 3. Run GPU version
 docker compose -f docker-compose.gpu.yml up --build
+```
+
+**If you encounter errors:**
+```bash
+# For repository/sources.list errors:
+chmod +x fix-nvidia-repo.sh
+./fix-nvidia-repo.sh
+./setup-nvidia-docker.sh  # Try again
+
+# Run diagnostic tool to identify issues:
+./debug-nvidia.sh
+
+# Manual NVIDIA Container Toolkit installation:
+wget https://github.com/NVIDIA/nvidia-container-toolkit/releases/download/v1.14.3/nvidia-container-toolkit_1.14.3-1_amd64.deb
+sudo dpkg -i nvidia-container-toolkit_1.14.3-1_amd64.deb
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
 ```
 
 **Alternative: Use CPU mode while setting up GPU:**

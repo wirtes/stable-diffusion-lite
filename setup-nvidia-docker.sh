@@ -34,10 +34,13 @@ curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dear
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
 echo "📋 Using distribution: $distribution"
 
-# Try modern method first
-if curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
-  sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list; then
+# Check if the repository URL exists before adding it
+echo "🔍 Checking repository availability for $distribution..."
+if curl -s -f -L "https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list" > /dev/null 2>&1; then
+    echo "✓ Repository found for $distribution"
+    curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+      sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+      sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
     
     echo "📥 Installing NVIDIA Container Toolkit (modern method)..."
     sudo apt-get update
@@ -48,17 +51,68 @@ if curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvid
         INSTALL_SUCCESS=false
     fi
 else
-    INSTALL_SUCCESS=false
+    echo "⚠️  No repository found for $distribution, trying alternatives..."
+    
+    # Try ubuntu22.04 as fallback for Debian 12
+    echo "🔄 Trying Ubuntu 22.04 repository as fallback..."
+    if curl -s -f -L "https://nvidia.github.io/libnvidia-container/ubuntu22.04/libnvidia-container.list" > /dev/null 2>&1; then
+        curl -s -L https://nvidia.github.io/libnvidia-container/ubuntu22.04/libnvidia-container.list | \
+          sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+          sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+        
+        sudo apt-get update
+        if sudo apt-get install -y nvidia-container-toolkit; then
+            INSTALL_SUCCESS=true
+        else
+            INSTALL_SUCCESS=false
+        fi
+    else
+        INSTALL_SUCCESS=false
+    fi
 fi
 
 # Fallback to legacy method for older Debian versions
 if [ "$INSTALL_SUCCESS" != "true" ]; then
     echo "📥 Installing NVIDIA Container Toolkit (legacy method)..."
-    curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
     
-    sudo apt-get update
-    sudo apt-get install -y nvidia-docker2
+    # Clean up any broken repository files
+    sudo rm -f /etc/apt/sources.list.d/nvidia-container-toolkit.list
+    
+    # Try legacy nvidia-docker2 method
+    if curl -s -f -L "https://nvidia.github.io/nvidia-docker/gpgkey" > /dev/null 2>&1; then
+        curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+        
+        # Try different distributions for legacy method
+        for legacy_dist in "ubuntu20.04" "ubuntu18.04" "debian10"; do
+            echo "🔄 Trying legacy repository for $legacy_dist..."
+            if curl -s -f -L "https://nvidia.github.io/nvidia-docker/$legacy_dist/nvidia-docker.list" > /dev/null 2>&1; then
+                curl -s -L https://nvidia.github.io/nvidia-docker/$legacy_dist/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+                sudo apt-get update
+                if sudo apt-get install -y nvidia-docker2; then
+                    INSTALL_SUCCESS=true
+                    break
+                fi
+            fi
+        done
+    fi
+    
+    # Final fallback: manual installation
+    if [ "$INSTALL_SUCCESS" != "true" ]; then
+        echo "❌ All repository methods failed. Trying manual installation..."
+        
+        # Download and install manually
+        ARCH=$(dpkg --print-architecture)
+        TOOLKIT_VERSION="1.14.3-1"
+        
+        echo "📥 Downloading nvidia-container-toolkit manually..."
+        wget -q "https://github.com/NVIDIA/nvidia-container-toolkit/releases/download/v1.14.3/nvidia-container-toolkit_${TOOLKIT_VERSION}_${ARCH}.deb" -O /tmp/nvidia-container-toolkit.deb
+        
+        if [ -f /tmp/nvidia-container-toolkit.deb ]; then
+            sudo dpkg -i /tmp/nvidia-container-toolkit.deb || sudo apt-get install -f -y
+            rm -f /tmp/nvidia-container-toolkit.deb
+            INSTALL_SUCCESS=true
+        fi
+    fi
 fi
 
 # Configure Docker runtime
