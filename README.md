@@ -270,6 +270,13 @@ nvidia-smi
 chmod +x install-nvidia-drivers.sh
 ./install-nvidia-drivers.sh
 # Then reboot: sudo reboot
+
+# Alternative manual method for Debian 12:
+sudo apt update
+sudo apt install nvidia-detect
+nvidia-detect  # Shows recommended driver
+sudo apt install nvidia-driver-525 firmware-misc-nonfree  # Use recommended version
+sudo reboot
 ```
 
 **Step 2: Install NVIDIA Container Toolkit for Debian:**
