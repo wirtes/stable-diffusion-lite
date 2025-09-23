@@ -259,7 +259,20 @@ docker pull pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
 
 **GPU Not Detected / "could not select device driver nvidia":**
 
-This means NVIDIA Container Toolkit isn't installed. Here's how to fix it on **Debian**:
+This usually means either NVIDIA drivers aren't installed or NVIDIA Container Toolkit isn't set up.
+
+**Step 1: Install NVIDIA Drivers (if not already installed):**
+```bash
+# Check if you have NVIDIA drivers
+nvidia-smi
+
+# If that fails, install drivers first
+chmod +x install-nvidia-drivers.sh
+./install-nvidia-drivers.sh
+# Then reboot: sudo reboot
+```
+
+**Step 2: Install NVIDIA Container Toolkit for Debian:**
 
 ```bash
 # 1. First, verify you have NVIDIA drivers installed
@@ -299,11 +312,19 @@ sudo apt-get install -y nvidia-docker2
 sudo systemctl restart docker
 ```
 
-**Quick Setup Script:**
+**Complete Setup Process:**
 ```bash
-# Use the automated setup script
+# 1. Install NVIDIA drivers (if needed)
+chmod +x install-nvidia-drivers.sh
+./install-nvidia-drivers.sh
+sudo reboot  # Required after driver installation
+
+# 2. After reboot, setup Docker GPU support
 chmod +x setup-nvidia-docker.sh
 ./setup-nvidia-docker.sh
+
+# 3. Run GPU version
+docker compose -f docker-compose.gpu.yml up --build
 ```
 
 **Alternative: Use CPU mode while setting up GPU:**
