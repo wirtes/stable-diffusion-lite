@@ -14,9 +14,11 @@ COPY requirements-gpu.txt .
 # Install dependencies (PyTorch already included in base image)
 RUN pip install --no-cache-dir -r requirements-gpu.txt
 
-# Copy GTX 1060 optimized application
+# Copy other files first
+COPY save_image.sh test_api.py ./
+
+# Copy GTX 1060 optimized application LAST (so it doesn't get overwritten)
 COPY app-gpu-gtx1060.py app.py
-COPY . .
 
 # Expose port
 EXPOSE 8000
