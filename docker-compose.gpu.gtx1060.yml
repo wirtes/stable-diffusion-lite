@@ -11,6 +11,7 @@ services:
       - PYTHONUNBUFFERED=1
       - NVIDIA_VISIBLE_DEVICES=all
       - CUDA_VISIBLE_DEVICES=0
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
       - ./cache:/root/.cache  # Cache models to avoid re-downloading
     restart: unless-stopped
